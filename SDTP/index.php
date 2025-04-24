@@ -1,5 +1,8 @@
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 <?php
 session_start();
 include './config/config.php';
@@ -190,5 +193,9 @@ include './config/config.php';
     </script>
 </body>
 
+<<<<<<< Updated upstream
+</html>
+>>>>>>> Stashed changes
+=======
 </html>
 >>>>>>> Stashed changes
