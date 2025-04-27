@@ -1,4 +1,33 @@
 <?php
+session_start();
+include './config/config.php';
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_alerts'])) {
+    $moderate = $_POST['moderate'];
+    $unhealthy = $_POST['unhealthy'];
+    $very_unhealthy = $_POST['very_unhealthy'];
+    $hazardous = $_POST['hazardous'];
+    $enable_alerts = isset($_POST['enable_alerts']) ? 1 : 0;
+
+    $stmt = $conn->prepare("UPDATE alert_settings SET moderate = ?, unhealthy = ?, very_unhealthy = ?, hazardous = ?, enable_alerts = ? WHERE id = 1");
+    $stmt->bind_param("iiiii", $moderate, $unhealthy, $very_unhealthy, $hazardous, $enable_alerts);
+
+    if ($stmt->execute()) {
+        echo "<script>alert('Alert thresholds updated successfully!');</script>";
+    } else {
+        echo "Error updating settings: " . $stmt->error;
+    }
+}
+
+// Fetch current alert settings
+$sql = "SELECT * FROM alert_settings WHERE id = 1";
+$result = $conn->query($sql);
+$alert_settings = $result->fetch_assoc();
+
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -38,7 +67,9 @@
                         <span class="link-name">Dahsboard</span>
                     </a>
                 </li>
-               
+                <?php
+                  if (isset($_SESSION['admin'])) { 
+                ?>
                 <li>
                     <a href="./sensors.php">
                         <i class="fa-solid fa-tablet-button"></i>
@@ -58,7 +89,9 @@
                     </a>
                 </li>
 
-                
+                <?php 
+                  }
+                ?>
                 <li class="active">
                     <a href="./notifications.php">
                         <i class="fa-solid fa-bell"></i>
@@ -106,15 +139,24 @@
                 <input type="text" placeholder="Search here..." />
             </div>
 
-           
+            <?php
+              if (isset($_SESSION['admin'])) { 
+            ?>
             <img src="./images/Profile-PNG-Photo.png" alt="" />
-            
+            <?php 
+              }else{
+            ?>
 
             <div class="admin-login">
                 <a href="./components/login.php">
                     <span class="link-name">Admin</span>
                 </a>
             </div>
+
+            <?php
+              }
+            ?>
+
         </div>
 
         <div class="table-wrapper">
@@ -154,8 +196,11 @@
             </div>
         </div>
     </section>
-   
+    <script src="./js/actions.js"></script>
 </body>
 
 </html>
+
+<?php
+$conn->close();
 ?>
