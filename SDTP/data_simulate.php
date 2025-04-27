@@ -1,3 +1,42 @@
+<?php
+session_start();
+include './config/config.php';
+
+// Redirect if admin session is not set
+if (!isset($_SESSION['admin'])) {
+    header("Location: index.php");
+    exit();
+}
+
+$sql = "SELECT * FROM simulation_settings WHERE id = 1";
+$result = $conn->query($sql);
+
+$simu_settings = $result->num_rows > 0 ? $result->fetch_assoc() : [
+    'simulation_status' => 'stopped',
+    'baseline_aqi' => 0,
+    'variation' => 0,
+    'frequency' => 0
+];
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update'])) {
+    $simulation_status = $_POST['simulation_status'];
+    $baseline_aqi = $_POST['baseline_aqi'];
+    $variation = $_POST['variation'];
+    $frequency = $_POST['frequency'];
+
+    // Corrected SQL query (use `id = 1`, not `sensor_id = 1`)
+    $stmt = $conn->prepare("UPDATE simulation_settings SET simulation_status = ?, baseline_aqi = ?, variation = ?, frequency = ? WHERE id = 1");
+    $stmt->bind_param("siii", $simulation_status, $baseline_aqi, $variation, $frequency);
+
+    if ($stmt->execute()) {
+        echo "<script>alert('Simulation settings updated successfully!'); window.location.href = 'data_simulate.php';</script>";
+    } else {
+        echo "Error: " . $stmt->error;
+    }
+}
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -180,3 +219,7 @@
 </body>
 
 </html>
+
+<?php
+$conn->close();
+?>
