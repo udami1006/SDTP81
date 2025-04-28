@@ -1,4 +1,53 @@
 <?php
+session_start();
+include './config/config.php';
+
+if (!isset($_SESSION['admin'])) {
+    header("Location: index.php");
+    exit();
+}
+
+$sql = "SELECT * FROM admins";
+$result = $conn->query($sql);
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['insert'])) {
+    $username = $_POST['username'];
+    $name = $_POST['name'];
+    $password = $_POST['password'];
+    $c_password = $_POST['c_password'];
+    $role = $_POST['status_role'];
+    $status = $_POST['status'];
+
+    if ($password !== $c_password) {
+        echo "<script>alert('Passwords do not match!'); window.location.href='user_manage.php';</script>";
+        exit();
+    }
+    
+    $stmt = $conn->prepare("INSERT INTO admins (username, name, password, role, status) VALUES (?, ?, ?, ?,?)");
+    $stmt->bind_param("sssss", $username, $name, $password, $role, $status);
+    if ($stmt->execute()) {
+        header("Location: user_manage.php");
+        exit();
+    } else {
+        echo "Error: " . $stmt->error;
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete'])) {
+        $id = $_POST['id'];
+
+        $stmt = $conn->prepare("DELETE FROM admins WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        if ($stmt->execute()) {
+            echo "<script>alert('Account deleted successfully!');</script>";
+            header("Location: user_manage.php");
+            exit();
+        } else {
+            echo "Error: " . $stmt->error;
+        }
+}
+?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -39,6 +88,9 @@
                         <span class="link-name">Dahsboard</span>
                     </a>
                 </li>
+                <?php
+                  if (isset($_SESSION['admin'])) { 
+                ?>
                 <li>
                     <a href="./sensors.php">
                         <i class="fa-solid fa-tablet-button"></i>
@@ -58,6 +110,9 @@
                     </a>
                 </li>
 
+                <?php 
+                  }
+                ?>
                 <li>
                     <a href="./notifications.php">
                         <i class="fa-solid fa-bell"></i>
@@ -105,14 +160,23 @@
                 <input type="text" placeholder="Search here..." />
             </div>
 
+            <?php
+              if (isset($_SESSION['admin'])) { 
+            ?>
             <img src="./images/Profile-PNG-Photo.png" alt="" />
-            
+            <?php 
+              }else{
+            ?>
 
             <div class="admin-login">
                 <a href="./components/login.php">
                     <span class="link-name">Admin</span>
                 </a>
             </div>
+
+            <?php
+              }
+            ?>
 
         </div>
 
@@ -135,30 +199,30 @@
                             </tr>
                         </thead>
                         <tbody>
-                            
+                            <?php while ($row = $result->fetch_assoc()) { ?>
                             <tr>
-                                <td>User</td>
-                                <td>user</td>
-                                <td>user123</td>
-                                <td>admin</td>
-                                <td>Active</td>
+                                <td><?php echo $row['username']; ?></td>
+                                <td><?php echo $row['name']; ?></td>
+                                <td><?php echo $row['password']; ?></td>
+                                <td><?php echo $row['role']; ?></td>
+                                <td><?php echo $row['status']; ?></td>
                                 <td>
                                     <!-- Form for Delete with confirmation -->
-                                    <form action="" method="POST" >
-                                        <input type="hidden" name="id" value="1001">
+                                    <form action="" method="POST" onsubmit="return confirmDelete()">
+                                        <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
                                         <button class="button-26" role="button" type="submit"
                                             name="delete">Delete</button>
                                     </form>
                                 </td>
                             </tr>
-                           
+                            <?php } ?>
                         </tbody>
                     </table>
                 </div>
 
                 <div class="new-sensor-forms">
                     <h2 style="padding: 30px 40px 0px 40px;">Create User</h2>
-                    <form style="padding: 40px; width: 40%;" action="" method="POST" >
+                    <form style="padding: 40px; width: 40%;" action="" method="POST" onsubmit="return confirmDelete()">
                         <div class="input-group">
                             <label for="username">Username</label>
                             <input type="text" name="username" placeholder="username" required>
@@ -200,9 +264,12 @@
     function confirmDelete() {
         return confirm("Are you sure you want to delete admin?");
     }
-    
+    </script>
+    <script src="./js/actions.js"></script>
 </body>
 
 </html>
 
+<?php
+$conn->close();
 ?>
